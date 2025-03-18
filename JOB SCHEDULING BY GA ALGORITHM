@@ -1,0 +1,54 @@
+import random
+NUM_JOBS = 3
+NUM_MACHINES = 2
+POPULATION_SIZE = 4
+GENERATIONS = 5
+MUTATION_RATE = 0.1
+CROSSOVER_RATE = 0.8
+JOB_TIMES = [2, 3, 1]
+def create_chromosome():
+    return [[random.randint(0, 1) for _ in range(NUM_MACHINES)] for _ in range(NUM_JOBS)]
+def fitness(chromosome):
+    machine_times = [0] * NUM_MACHINES
+    for job in range(NUM_JOBS):
+        for machine in range(NUM_MACHINES):
+            if chromosome[job][machine]:
+                machine_times[machine] += JOB_TIMES[job]
+    return 1 / max(machine_times)
+def crossover(parent1, parent2):
+    if random.random() < CROSSOVER_RATE:
+        point1 = random.randint(0, NUM_JOBS - 1)
+        point2 = random.randint(point1, NUM_JOBS)
+        child1 = parent1[:point1] + parent2[point1:point2] + parent1[point2:]
+        child2 = parent2[:point1] + parent1[point1:point2] + parent2[point2:]
+        return child1, child2
+    return parent1, parent2
+def mutate(chromosome):
+    for job in range(NUM_JOBS):
+        for machine in range(NUM_MACHINES):
+            if random.random() < MUTATION_RATE:
+                chromosome[job][machine] = 1 - chromosome[job][machine]
+    return chromosome
+def select_population(population, fitness_scores):
+    total_fitness = sum(fitness_scores)
+    probabilities = [score / total_fitness for score in fitness_scores]
+    return random.choices(population, weights=probabilities, k=POPULATION_SIZE)
+def genetic_algorithm():
+    population = [create_chromosome() for _ in range(POPULATION_SIZE)]
+    for generation in range(GENERATIONS):
+        fitness_scores = [fitness(chromosome) for chromosome in population]
+        selected_population = select_population(population, fitness_scores)
+        new_population = []
+        for i in range(0, POPULATION_SIZE, 2):
+            parent1, parent2 = selected_population[i], selected_population[i + 1]
+            child1, child2 = crossover(parent1, parent2)
+            new_population.extend([mutate(child1), mutate(child2)])     
+        population = new_population
+        best_fitness = max(fitness_scores)
+        print(f"Generation {generation + 1}: Best Fitness = {best_fitness}")
+    best_index = fitness_scores.index(max(fitness_scores))
+    return population[best_index]
+best_schedule = genetic_algorithm()
+print("Best Schedule:")
+for job in best_schedule:
+    print(job)
